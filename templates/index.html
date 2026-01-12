@@ -1,0 +1,79 @@
+{% extends "layout.html" %}
+
+{% block title %}Home - TWINS MEDCARE INSTITUTE{% endblock %}
+
+{% block content %}
+<div class="hero-section text-center py-5">
+    <h1 class="display-4 text-primary">Welcome to TWINS MEDCARE INSTITUTE</h1>
+    <p class="lead">Certified Nursing Assistant Program</p>
+    <img src="{{ url_for('static', filename='images/medical-logo.png') }}" 
+         alt="Medical Institute" 
+         class="img-fluid my-4" 
+         style="max-height: 200px;">
+    
+    {% if not current_user.is_authenticated %}
+        <div class="mt-4">
+            <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg me-3">
+                <i class="bi bi-person-plus"></i> Join Now
+            </a>
+            <a href="{{ url_for('login') }}" class="btn btn-outline-primary btn-lg">
+                <i class="bi bi-box-arrow-in-right"></i> Student Login
+            </a>
+        </div>
+    {% else %}
+        <div class="mt-4">
+            <a href="{{ url_for('dashboard') }}" class="btn btn-primary btn-lg">
+                <i class="bi bi-speedometer2"></i> Go to Dashboard
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+<div class="row mt-5">
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 text-center">
+            <div class="card-body">
+                <i class="bi bi-journal-text display-4 text-primary"></i>
+                <h3 class="card-title mt-3">Assignments & Exams</h3>
+                <p class="card-text">Upload and access assignments in JSON or DOCX format. Take interactive exams online.</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 text-center">
+            <div class="card-body">
+                <i class="bi bi-book display-4 text-primary"></i>
+                <h3 class="card-title mt-3">Digital Library</h3>
+                <p class="card-text">Access videos, notes, past papers, and resources organized by modules.</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 text-center">
+            <div class="card-body">
+                <i class="bi bi-people display-4 text-primary"></i>
+                <h3 class="card-title mt-3">CNA Program</h3>
+                <p class="card-text">Comprehensive Certified Nursing Assistant training with industry experts.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="mt-5">
+    <h2 class="text-center mb-4">Course Modules</h2>
+    <div class="row">
+        {% for module in cna_modules %}
+        <div class="col-md-6 col-lg-4 mb-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">{{ module }}</h5>
+                    <p class="card-text">Comprehensive learning materials and assessments</p>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

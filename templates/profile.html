@@ -1,0 +1,299 @@
+{% extends "layout.html" %}
+
+{% block title %}Profile - {{ user.full_name or user.username }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Profile Information -->
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="bi bi-person-circle"></i> Profile Information</h4>
+            </div>
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <i class="bi bi-person-badge display-1 text-primary"></i>
+                </div>
+                <h3>{{ user.full_name or user.username }}</h3>
+                <p class="text-muted">@{{ user.username }}</p>
+                
+                <div class="list-group list-group-flush text-start">
+                    <div class="list-group-item">
+                        <i class="bi bi-envelope me-2"></i>
+                        <strong>Email:</strong> {{ user.email }}
+                    </div>
+                    <div class="list-group-item">
+                        <i class="bi bi-book me-2"></i>
+                        <strong>Course:</strong> {{ user.course }}
+                    </div>
+                    <div class="list-group-item">
+                        <i class="bi bi-person-badge me-2"></i>
+                        <strong>Role:</strong> 
+                        <span class="badge bg-{% if user.role == 'admin' %}danger{% elif user.role == 'instructor' %}warning{% else %}info{% endif %}">
+                            {{ user.role|title }}
+                        </span>
+                    </div>
+                    <div class="list-group-item">
+                        <i class="bi bi-calendar me-2"></i>
+                        <strong>Joined:</strong> {{ user.created_at.strftime('%B %d, %Y') }}
+                    </div>
+                </div>
+                
+                <button class="btn btn-outline-primary mt-3" data-bs-toggle="modal" data-bs-target="#editProfileModal">
+                    <i class="bi bi-pencil"></i> Edit Profile
+                </button>
+            </div>
+        </div>
+        
+        <!-- Progress Stats -->
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="bi bi-graph-up"></i> Learning Progress</h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-3">
+                    <div class="display-6">
+                        {% set total_assignments = assignments|length %}
+                        {% set completed_assignments = submissions|selectattr('score', 'defined')|list|length %}
+                        {% set progress = (completed_assignments / total_assignments * 100) if total_assignments > 0 else 0 %}
+                        {{ "%.1f"|format(progress) }}%
+                    </div>
+                    <p class="text-muted">Course Completion</p>
+                </div>
+                
+                <div class="progress mb-3" style="height: 20px;">
+                    <div class="progress-bar bg-success" style="width: {{ progress }}%"></div>
+                </div>
+                
+                <div class="row text-center">
+                    <div class="col-6">
+                        <div class="display-6">{{ completed_assignments }}</div>
+                        <small class="text-muted">Completed</small>
+                    </div>
+                    <div class="col-6">
+                        <div class="display-6">{{ total_assignments }}</div>
+                        <small class="text-muted">Total</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Submissions -->
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h4 class="mb-0"><i class="bi bi-journal-check"></i> Recent Submissions</h4>
+            </div>
+            <div class="card-body">
+                {% if submissions %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Assignment</th>
+                                <th>Module</th>
+                                <th>Submitted</th>
+                                <th>Score</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for submission in submissions|sort(attribute='submitted_at', reverse=true) %}
+                            {% set assignment = submission.assignment %}
+                            <tr>
+                                <td>
+                                    <strong>{{ assignment.title }}</strong>
+                                </td>
+                                <td>
+                                    <span class="badge bg-info">{{ assignment.module }}</span>
+                                </td>
+                                <td>
+                                    {{ submission.submitted_at.strftime('%b %d, %Y') }}
+                                </td>
+                                <td>
+                                    {% if submission.score is not none %}
+                                        <span class="badge {% if submission.score >= 70 %}bg-success{% elif submission.score >= 50 %}bg-warning{% else %}bg-danger{% endif %}">
+                                            {{ submission.score }}%
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Pending</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-{% if submission.status == 'graded' %}success{% else %}warning{% endif %}">
+                                        {{ submission.status|title }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-info" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#submissionDetails{{ submission.id }}">
+                                        <i class="bi bi-eye"></i> View
+                                    </button>
+                                </td>
+                            </tr>
+                            
+                            <!-- Submission Details Modal -->
+                            <div class="modal fade" id="submissionDetails{{ submission.id }}" tabindex="-1">
+                                <div class="modal-dialog modal-lg">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">Submission Details</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <h6>{{ assignment.title }}</h6>
+                                            <p>{{ assignment.description }}</p>
+                                            
+                                            <div class="row mb-3">
+                                                <div class="col-md-6">
+                                                    <p><strong>Module:</strong> {{ assignment.module }}</p>
+                                                    <p><strong>Submitted:</strong> {{ submission.submitted_at.strftime('%B %d, %Y %I:%M %p') }}</p>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <p><strong>Score:</strong> 
+                                                        {% if submission.score is not none %}
+                                                            {{ submission.score }}%
+                                                        {% else %}
+                                                            <em>Not graded yet</em>
+                                                        {% endif %}
+                                                    </p>
+                                                    <p><strong>Status:</strong> {{ submission.status|title }}</p>
+                                                </div>
+                                            </div>
+                                            
+                                            {% if submission.answers %}
+                                            <div class="card">
+                                                <div class="card-header">
+                                                    <h6 class="mb-0">Your Answers</h6>
+                                                </div>
+                                                <div class="card-body">
+                                                    <pre class="bg-light p-3 rounded">{{ submission.answers|tojson|safe }}</pre>
+                                                </div>
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-journal-x display-1 text-muted"></i>
+                    <h4 class="mt-3">No submissions yet</h4>
+                    <p class="text-muted">Start your first assignment to see your progress here</p>
+                    <a href="{{ url_for('assignments') }}" class="btn btn-primary">
+                        <i class="bi bi-journal-text"></i> View Assignments
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Performance Chart -->
+        <div class="card mt-4">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0"><i class="bi bi-bar-chart"></i> Performance Overview</h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center">
+                    <canvas id="performanceChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Profile Modal -->
+<div class="modal fade" id="editProfileModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Profile</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="/update_profile" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="editFullName" class="form-label">Full Name</label>
+                        <input type="text" class="form-control" id="editFullName" name="full_name" 
+                               value="{{ user.full_name or '' }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editEmail" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="editEmail" name="email" 
+                               value="{{ user.email }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editCourse" class="form-label">Course</label>
+                        <select class="form-select" id="editCourse" name="course">
+                            <option value="CNA" {% if user.course == 'CNA' %}selected{% endif %}>CNA</option>
+                            <option value="CNA_Advanced" {% if user.course == 'CNA_Advanced' %}selected{% endif %}>CNA Advanced</option>
+                            <option value="CPR" {% if user.course == 'CPR' %}selected{% endif %}>CPR</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="currentPassword" class="form-label">Current Password (to confirm changes)</label>
+                        <input type="password" class="form-control" id="currentPassword" name="current_password">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Performance Chart
+const ctx = document.getElementById('performanceChart').getContext('2d');
+const submissions = {{ submissions|tojson|safe }};
+
+// Prepare data for chart
+const gradedSubmissions = submissions.filter(s => s.score !== null);
+const scores = gradedSubmissions.map(s => s.score).slice(-10); // Last 10 scores
+const labels = gradedSubmissions.map(s => s.assignment.title).slice(-10);
+
+const performanceChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: labels,
+        datasets: [{
+            label: 'Scores (%)',
+            data: scores,
+            borderColor: '#0d6efd',
+            backgroundColor: 'rgba(13, 110, 253, 0.1)',
+            tension: 0.3,
+            fill: true
+        }]
+    },
+    options: {
+        responsive: true,
+        scales: {
+            y: {
+                beginAtZero: true,
+                max: 100,
+                ticks: {
+                    callback: function(value) {
+                        return value + '%';
+                    }
+                }
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

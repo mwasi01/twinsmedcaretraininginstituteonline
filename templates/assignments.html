@@ -1,0 +1,81 @@
+{% extends "layout.html" %}
+
+{% block title %}Assignments - TWINS MEDCARE INSTITUTE{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header bg-primary text-white">
+        <div class="d-flex justify-content-between align-items-center">
+            <h3 class="mb-0"><i class="bi bi-journal-text"></i> Assignments</h3>
+            {% if current_user.role in ['instructor', 'admin'] %}
+            <a href="{{ url_for('upload_assignment') }}" class="btn btn-light">
+                <i class="bi bi-plus-circle"></i> Upload Assignment
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    <div class="card-body">
+        {% if assignments %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Module</th>
+                            <th>Due Date</th>
+                            <th>Type</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for assignment in assignments %}
+                        <tr>
+                            <td>
+                                <strong>{{ assignment.title }}</strong>
+                                {% if assignment.description %}
+                                <br><small class="text-muted">{{ assignment.description[:100] }}{% if assignment.description|length > 100 %}...{% endif %}</small>
+                                {% endif %}
+                            </td>
+                            <td>{{ assignment.module }}</td>
+                            <td>
+                                {% if assignment.due_date %}
+                                    {{ assignment.due_date.strftime('%b %d, %Y') }}
+                                    {% if assignment.due_date < datetime.utcnow() %}
+                                        <span class="badge bg-danger">Overdue</span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="text-muted">No due date</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge bg-info">{{ assignment.file_type|upper }}</span>
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{{ url_for('take_exam', assignment_id=assignment.id) }}" 
+                                       class="btn btn-outline-primary">
+                                        <i class="bi bi-pencil-square"></i> Take Exam
+                                    </a>
+                                    {% if assignment.filename %}
+                                    <a href="{{ url_for('download_file', resource_type='assignment', filename=assignment.filename) }}" 
+                                       class="btn btn-outline-success">
+                                        <i class="bi bi-download"></i> Download
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-journal-text display-1 text-muted"></i>
+                <h4 class="mt-3">No assignments available</h4>
+                <p class="text-muted">Check back later or contact your instructor</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

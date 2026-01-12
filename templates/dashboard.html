@@ -1,0 +1,128 @@
+{% extends "layout.html" %}
+
+{% block title %}Dashboard - TWINS MEDCARE INSTITUTE{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card mb-4">
+            <div class="card-body">
+                <h2 class="card-title">
+                    <i class="bi bi-person-circle"></i> Welcome, {{ user.full_name or user.username }}
+                </h2>
+                <p class="card-text">Course: {{ user.course }} | Role: {{ user.role.title() }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Recent Assignments -->
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-journal-text"></i> Recent Assignments</h5>
+            </div>
+            <div class="card-body">
+                {% if assignments %}
+                    <div class="list-group">
+                        {% for assignment in assignments %}
+                        <a href="{{ url_for('take_exam', assignment_id=assignment.id) }}" 
+                           class="list-group-item list-group-item-action">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">{{ assignment.title }}</h6>
+                                <small>{{ assignment.created_at.strftime('%b %d') }}</small>
+                            </div>
+                            <p class="mb-1">{{ assignment.description[:100] }}...</p>
+                            <small>Module: {{ assignment.module }}</small>
+                        </a>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted">No assignments available.</p>
+                {% endif %}
+                <a href="{{ url_for('assignments') }}" class="btn btn-outline-primary btn-sm mt-3">
+                    View All Assignments
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Library Resources -->
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="bi bi-book"></i> Recent Library Resources</h5>
+            </div>
+            <div class="card-body">
+                {% if resources %}
+                    <div class="list-group">
+                        {% for resource in resources %}
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">{{ resource.title }}</h6>
+                                <small class="badge bg-info">{{ resource.resource_type|replace('_', ' ')|title }}</small>
+                            </div>
+                            <p class="mb-1">{{ resource.description[:100] }}...</p>
+                            <small>Module: {{ resource.module }}</small>
+                            <div class="mt-2">
+                                <a href="{{ url_for('download_file', resource_type='library', filename=resource.filename) }}" 
+                                   class="btn btn-sm btn-outline-success">
+                                    <i class="bi bi-download"></i> Download
+                                </a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted">No resources available.</p>
+                {% endif %}
+                <a href="{{ url_for('library') }}" class="btn btn-outline-success btn-sm mt-3">
+                    View Library
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="bi bi-lightning-charge"></i> Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-3 mb-3">
+                        <a href="{{ url_for('assignments') }}" class="btn btn-primary btn-lg w-100">
+                            <i class="bi bi-journal-text display-6"></i><br>
+                            Assignments
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{{ url_for('library') }}" class="btn btn-success btn-lg w-100">
+                            <i class="bi bi-book display-6"></i><br>
+                            Library
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{{ url_for('profile') }}" class="btn btn-warning btn-lg w-100">
+                            <i class="bi bi-person-circle display-6"></i><br>
+                            Profile
+                        </a>
+                    </div>
+                    {% if user.role in ['instructor', 'admin'] %}
+                    <div class="col-md-3 mb-3">
+                        <a href="{{ url_for('upload_assignment') }}" class="btn btn-danger btn-lg w-100">
+                            <i class="bi bi-upload display-6"></i><br>
+                            Upload
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

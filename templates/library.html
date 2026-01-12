@@ -1,0 +1,118 @@
+{% extends "layout.html" %}
+
+{% block title %}Digital Library - TWINS MEDCARE INSTITUTE{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header bg-success text-white">
+        <div class="d-flex justify-content-between align-items-center">
+            <h3 class="mb-0"><i class="bi bi-book"></i> Digital Library</h3>
+            {% if current_user.role in ['instructor', 'admin'] %}
+            <a href="{{ url_for('upload_resource') }}" class="btn btn-light">
+                <i class="bi bi-plus-circle"></i> Upload Resource
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    <div class="card-body">
+        <!-- Filters -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <form method="GET" class="row g-3">
+                    <div class="col-md-6">
+                        <label for="type" class="form-label">Resource Type</label>
+                        <select name="type" id="type" class="form-select" onchange="this.form.submit()">
+                            <option value="all" {% if current_type == 'all' %}selected{% endif %}>All Types</option>
+                            <option value="video" {% if current_type == 'video' %}selected{% endif %}>Videos</option>
+                            <option value="notes" {% if current_type == 'notes' %}selected{% endif %}>Notes</option>
+                            <option value="past_paper" {% if current_type == 'past_paper' %}selected{% endif %}>Past Papers</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="module" class="form-label">Module</label>
+                        <select name="module" id="module" class="form-select" onchange="this.form.submit()">
+                            <option value="all" {% if current_module == 'all' %}selected{% endif %}>All Modules</option>
+                            {% for module in modules %}
+                            <option value="{{ module }}" {% if current_module == module %}selected{% endif %}>
+                                {{ module }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Resource Grid -->
+        <div class="row">
+            {% for resource in resources %}
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <h5 class="card-title">{{ resource.title }}</h5>
+                            <span class="badge bg-info">{{ resource.resource_type|replace('_', ' ')|title }}</span>
+                        </div>
+                        
+                        {% if resource.description %}
+                        <p class="card-text">{{ resource.description }}</p>
+                        {% endif %}
+                        
+                        <div class="mt-3">
+                            <p class="mb-1"><strong>Module:</strong> {{ resource.module }}</p>
+                            <p class="mb-1"><strong>Uploaded:</strong> {{ resource.uploaded_at.strftime('%Y-%m-%d') }}</p>
+                            <p class="mb-3"><strong>Views:</strong> {{ resource.views }}</p>
+                            
+                            <div class="btn-group w-100">
+                                <a href="{{ url_for('download_file', resource_type='library', filename=resource.filename) }}" 
+                                   class="btn btn-success">
+                                    <i class="bi bi-download"></i> Download
+                                </a>
+                                
+                                {% if resource.resource_type == 'video' %}
+                                <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" 
+                                        data-bs-target="#videoModal{{ resource.id }}">
+                                    <i class="bi bi-play-circle"></i> Preview
+                                </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Video Modal -->
+            {% if resource.resource_type == 'video' %}
+            <div class="modal fade" id="videoModal{{ resource.id }}" tabindex="-1">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">{{ resource.title }}</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="ratio ratio-16x9">
+                                <video controls style="width: 100%;">
+                                    <source src="{{ url_for('download_file', resource_type='library', filename=resource.filename) }}" 
+                                            type="video/mp4">
+                                    Your browser does not support the video tag.
+                                </video>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+
+        {% if not resources %}
+        <div class="text-center py-5">
+            <i class="bi bi-book display-1 text-muted"></i>
+            <h4 class="mt-3">No resources found</h4>
+            <p class="text-muted">Try changing your filter criteria</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

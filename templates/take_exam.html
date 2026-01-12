@@ -1,0 +1,85 @@
+{% extends "layout.html" %}
+
+{% block title %}Take Exam - {{ assignment.title }}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header bg-primary text-white">
+        <h3 class="mb-0"><i class="bi bi-pencil-square"></i> {{ assignment.title }}</h3>
+    </div>
+    <div class="card-body">
+        <div class="alert alert-info">
+            <h5>Instructions:</h5>
+            <p>{{ assignment.description }}</p>
+            {% if assignment.due_date %}
+                <p><strong>Due Date:</strong> {{ assignment.due_date.strftime('%B %d, %Y %I:%M %p') }}</p>
+            {% endif %}
+            <p><strong>Max Score:</strong> {{ assignment.max_score }}</p>
+        </div>
+
+        <form method="POST" action="{{ url_for('take_exam', assignment_id=assignment.id) }}">
+            {% if questions %}
+                {% for question in questions %}
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title">Question {{ loop.index }}: {{ question.question }}</h5>
+                        
+                        {% if question.question_type == 'multiple_choice' %}
+                            {% for option in question.options %}
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" 
+                                       type="radio" 
+                                       name="question_{{ loop.index0 }}" 
+                                       id="q{{ loop.index0 }}_option{{ loop.index }}" 
+                                       value="{{ option }}">
+                                <label class="form-check-label" for="q{{ loop.index0 }}_option{{ loop.index }}">
+                                    {{ option }}
+                                </label>
+                            </div>
+                            {% endfor %}
+                        {% elif question.question_type == 'true_false' %}
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="radio" name="question_{{ loop.index0 }}" value="True">
+                                <label class="form-check-label">True</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="question_{{ loop.index0 }}" value="False">
+                                <label class="form-check-label">False</label>
+                            </div>
+                        {% else %}
+                            <div class="form-group">
+                                <textarea class="form-control" 
+                                          name="question_{{ loop.index0 }}" 
+                                          rows="3" 
+                                          placeholder="Type your answer here..."></textarea>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="alert alert-warning">
+                    <p>This assignment doesn't have interactive questions. Please download the file to complete it.</p>
+                    {% if assignment.filename %}
+                    <a href="{{ url_for('download_file', resource_type='assignment', filename=assignment.filename) }}" 
+                       class="btn btn-primary">
+                        <i class="bi bi-download"></i> Download Assignment File
+                    </a>
+                    {% endif %}
+                </div>
+            {% endif %}
+
+            {% if questions %}
+            <div class="text-center mt-4">
+                <button type="submit" class="btn btn-success btn-lg">
+                    <i class="bi bi-send-check"></i> Submit Exam
+                </button>
+                <a href="{{ url_for('assignments') }}" class="btn btn-secondary btn-lg">
+                    <i class="bi bi-x-circle"></i> Cancel
+                </a>
+            </div>
+            {% endif %}
+        </form>
+    </div>
+</div>
+{% endblock %}

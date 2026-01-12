@@ -1,0 +1,213 @@
+{% extends "layout.html" %}
+
+{% block title %}Upload Resource - TWINS MEDCARE INSTITUTE{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h3 class="mb-0"><i class="bi bi-upload"></i> Upload Library Resource</h3>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('upload_resource') }}" enctype="multipart/form-data">
+                    <!-- Resource Information -->
+                    <div class="mb-4">
+                        <h5 class="mb-3"><i class="bi bi-info-circle"></i> Resource Information</h5>
+                        
+                        <div class="mb-3">
+                            <label for="title" class="form-label">
+                                <i class="bi bi-pencil"></i> Resource Title
+                            </label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="title" 
+                                   name="title" 
+                                   required 
+                                   placeholder="e.g., Anatomy Lecture Video">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="description" class="form-label">
+                                <i class="bi bi-card-text"></i> Description
+                            </label>
+                            <textarea class="form-control" 
+                                      id="description" 
+                                      name="description" 
+                                      rows="3" 
+                                      placeholder="Describe the resource content..."></textarea>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="type" class="form-label">
+                                    <i class="bi bi-tag"></i> Resource Type
+                                </label>
+                                <select class="form-select" id="type" name="type" required>
+                                    <option value="" disabled selected>Select type</option>
+                                    <option value="video">Video</option>
+                                    <option value="notes">Notes/Document</option>
+                                    <option value="past_paper">Past Paper/Exam</option>
+                                    <option value="reference">Reference Material</option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="module" class="form-label">
+                                    <i class="bi bi-folder"></i> Module
+                                </label>
+                                <select class="form-select" id="module" name="module" required>
+                                    <option value="" disabled selected>Select a module</option>
+                                    {% for module in cna_modules %}
+                                    <option value="{{ module }}">{{ module }}</option>
+                                    {% endfor %}
+                                    <option value="General">General</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- File Upload Section -->
+                    <div class="mb-4">
+                        <h5 class="mb-3"><i class="bi bi-file-earmark"></i> Resource File</h5>
+                        
+                        <div class="alert alert-info">
+                            <h6><i class="bi bi-info-circle"></i> Supported Formats:</h6>
+                            <ul class="mb-0">
+                                <li><strong>Videos:</strong> MP4, AVI, MOV, WMV</li>
+                                <li><strong>Documents:</strong> PDF, DOCX, PPTX, TXT</li>
+                                <li><strong>Images:</strong> JPG, PNG, GIF</li>
+                                <li><strong>Other:</strong> ZIP (for multiple files)</li>
+                                <li>Maximum file size: 16MB</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="file" class="form-label">
+                                <i class="bi bi-paperclip"></i> Choose File
+                            </label>
+                            <input type="file" 
+                                   class="form-control" 
+                                   id="file" 
+                                   name="file" 
+                                   required>
+                            <div class="form-text">
+                                Select the resource file to upload (Max: 16MB)
+                            </div>
+                        </div>
+                        
+                        <!-- File Preview -->
+                        <div id="filePreview" class="card d-none">
+                            <div class="card-header">
+                                <h6 class="mb-0">File Preview</h6>
+                            </div>
+                            <div class="card-body">
+                                <div id="previewContent"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Submit Buttons -->
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('library') }}" class="btn btn-secondary me-md-2">
+                            <i class="bi bi-x-circle"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-upload"></i> Upload Resource
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Recently Uploaded Resources -->
+        {% if recent_resources %}
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-clock-history"></i> Recently Uploaded Resources</h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group">
+                    {% for resource in recent_resources[:3] %}
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">{{ resource.title }}</h6>
+                            <small>{{ resource.uploaded_at.strftime('%b %d') }}</small>
+                        </div>
+                        <p class="mb-1">{{ resource.description[:100] }}...</p>
+                        <small class="text-muted">
+                            Type: {{ resource.resource_type|replace('_', ' ')|title }} | 
+                            Module: {{ resource.module }}
+                        </small>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// File preview functionality
+document.getElementById('file').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    const previewDiv = document.getElementById('filePreview');
+    const previewContent = document.getElementById('previewContent');
+    
+    if (!file) {
+        previewDiv.classList.add('d-none');
+        return;
+    }
+    
+    // Show file info
+    previewDiv.classList.remove('d-none');
+    previewContent.innerHTML = `
+        <p><strong>File Name:</strong> ${file.name}</p>
+        <p><strong>File Size:</strong> ${(file.size / 1024 / 1024).toFixed(2)} MB</p>
+        <p><strong>File Type:</strong> ${file.type || file.name.split('.').pop().toUpperCase()}</p>
+        <p><strong>Last Modified:</strong> ${new Date(file.lastModified).toLocaleString()}</p>
+    `;
+    
+    // Image preview
+    if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            previewContent.innerHTML += `
+                <hr>
+                <h6>Image Preview:</h6>
+                <img src="${e.target.result}" class="img-fluid rounded" style="max-height: 200px;">
+            `;
+        };
+        reader.readAsDataURL(file);
+    }
+});
+
+// Form validation
+document.querySelector('form').addEventListener('submit', function(e) {
+    const fileInput = document.getElementById('file');
+    const file = fileInput.files[0];
+    
+    if (!file) {
+        e.preventDefault();
+        alert('Please select a file to upload.');
+        return;
+    }
+    
+    // Check file size (16MB max)
+    if (file.size > 16 * 1024 * 1024) {
+        e.preventDefault();
+        alert('File size exceeds 16MB limit. Please choose a smaller file.');
+        fileInput.value = '';
+        return;
+    }
+    
+    // Show loading state
+    const submitBtn = this.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Uploading...';
+});
+</script>
+{% endblock %}
