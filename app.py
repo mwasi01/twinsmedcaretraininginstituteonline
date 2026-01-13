@@ -81,13 +81,19 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in Config.ALLOWED_EXTENSIONS
 
 def create_upload_folders():
-    folders = [
-        os.path.join(app.config['UPLOAD_FOLDER'], Config.ASSIGNMENTS_FOLDER),
-        os.path.join(app.config['UPLOAD_FOLDER'], Config.LIBRARY_FOLDER),
-        'static/uploads/profile_pics'
-    ]
-    for folder in folders:
-        os.makedirs(folder, exist_ok=True)
+    """Create necessary upload folders"""
+    try:
+        folders = [
+            'static/uploads/assignments',
+            'static/uploads/library',
+            'static/uploads/profile_pics',
+            'instance'
+        ]
+        for folder in folders:
+            os.makedirs(folder, exist_ok=True)
+        print("Created upload folders")
+    except Exception as e:
+        print(f"Warning: Could not create folders: {e}")
 
 # Routes
 @app.route('/')
@@ -675,38 +681,54 @@ def forbidden(e):
 # Initialize database and create upload folders
 def initialize_database():
     with app.app_context():
-        db.create_all()
-        create_upload_folders()
-        
-        if not User.query.filter_by(username='admin').first():
-            admin = User(
-                username='admin',
-                email='admin@twinsmedcare.edu',
-                full_name='System Administrator',
-                role='admin',
-                course='CNA'
-            )
-            admin.set_password('admin123')
-            db.session.add(admin)
-            print("Created admin user: admin / admin123")
-        
-        if not User.query.filter_by(username='instructor').first():
-            instructor = User(
-                username='instructor',
-                email='instructor@twinsmedcare.edu',
-                full_name='Course Instructor',
-                role='instructor',
-                course='CNA'
-            )
-            instructor.set_password('instructor123')
-            db.session.add(instructor)
-            print("Created instructor user: instructor / instructor123")
-        
-        db.session.commit()
-        print("Database initialized successfully")
+        try:
+            # Create upload folders first
+            create_upload_folders()
+            
+            # Create tables
+            db.create_all()
+            print("Database tables created")
+            
+            # Create admin user if not exists
+            if not User.query.filter_by(username='admin').first():
+                admin = User(
+                    username='admin',
+                    email='admin@twinsmedcare.edu',
+                    full_name='System Administrator',
+                    role='admin',
+                    course='CNA'
+                )
+                admin.set_password('admin123')
+                db.session.add(admin)
+                print("Created admin user: admin / admin123")
+            
+            # Create default instructor if not exists
+            if not User.query.filter_by(username='instructor').first():
+                instructor = User(
+                    username='instructor',
+                    email='instructor@twinsmedcare.edu',
+                    full_name='Course Instructor',
+                    role='instructor',
+                    course='CNA'
+                )
+                instructor.set_password('instructor123')
+                db.session.add(instructor)
+                print("Created instructor user: instructor / instructor123")
+            
+            db.session.commit()
+            print("Database initialized successfully")
+            
+        except Exception as e:
+            print(f"Error initializing database: {e}")
+            # Don't crash if database initialization fails
+            # The app will still run and try to reconnect
 
 # Run initialization
-initialize_database()
+try:
+    initialize_database()
+except Exception as e:
+    print(f"Warning: Database initialization failed: {e}")
+    print("App will continue running...")
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
