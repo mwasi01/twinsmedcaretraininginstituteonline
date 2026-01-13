@@ -2,7 +2,7 @@ import os
 import json
 from datetime import datetime, timedelta
 from werkzeug.utils import secure_filename
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_file, abort
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_file
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -27,9 +27,9 @@ class User(UserMixin, db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(200), nullable=False)
-    role = db.Column(db.String(20), default='student')  # student, instructor, admin
+    role = db.Column(db.String(20), default='student')
     full_name = db.Column(db.String(100))
-    course = db.Column(db.String(50), default='CNA')  # Certified Nursing Assistant
+    course = db.Column(db.String(50), default='CNA')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     def set_password(self, password):
@@ -37,48 +37,36 @@ class User(UserMixin, db.Model):
     
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
-    
-    # Relationship with submissions
-    submissions = db.relationship('ExamSubmission', backref='student', lazy=True, cascade="all, delete-orphan")
-    
-    # Relationship with created assignments
-    created_assignments = db.relationship('Assignment', backref='creator', lazy=True, cascade="all, delete-orphan")
-    
-    # Relationship with uploaded resources
-    uploaded_resources = db.relationship('LibraryResource', backref='uploader', lazy=True, cascade="all, delete-orphan")
 
 class Assignment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(200), nullable=False)
     description = db.Column(db.Text)
     filename = db.Column(db.String(200))
-    file_type = db.Column(db.String(20))  # json, docx, pdf
+    file_type = db.Column(db.String(20))
     course = db.Column(db.String(50), default='CNA')
     module = db.Column(db.String(100))
     due_date = db.Column(db.DateTime)
     max_score = db.Column(db.Integer, default=100)
     created_by = db.Column(db.Integer, db.ForeignKey('user.id'))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    questions = db.Column(db.Text)  # JSON string for quiz questions
-    
-    # Relationship with submissions
-    submissions = db.relationship('ExamSubmission', backref='assignment_ref', lazy=True, cascade="all, delete-orphan")
+    questions = db.Column(db.Text)
 
 class ExamSubmission(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     assignment_id = db.Column(db.Integer, db.ForeignKey('assignment.id'))
     student_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    answers = db.Column(db.Text)  # JSON string
+    answers = db.Column(db.Text)
     score = db.Column(db.Float)
     submitted_at = db.Column(db.DateTime, default=datetime.utcnow)
-    status = db.Column(db.String(20), default='submitted')  # submitted, graded
+    status = db.Column(db.String(20), default='submitted')
 
 class LibraryResource(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(200), nullable=False)
     description = db.Column(db.Text)
     filename = db.Column(db.String(200))
-    resource_type = db.Column(db.String(20))  # video, notes, past_paper, reference
+    resource_type = db.Column(db.String(20))
     course = db.Column(db.String(50), default='CNA')
     module = db.Column(db.String(100))
     uploaded_by = db.Column(db.Integer, db.ForeignKey('user.id'))
@@ -87,17 +75,16 @@ class LibraryResource(db.Model):
 
 @login_manager.user_loader
 def load_user(user_id):
-    return db.session.get(User, int(user_id))
+    return User.query.get(int(user_id))
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in Config.ALLOWED_EXTENSIONS
 
 def create_upload_folders():
-    """Create necessary upload folders if they don't exist"""
     folders = [
         os.path.join(app.config['UPLOAD_FOLDER'], Config.ASSIGNMENTS_FOLDER),
         os.path.join(app.config['UPLOAD_FOLDER'], Config.LIBRARY_FOLDER),
-        os.path.join('static', 'uploads', 'profile_pics')
+        'static/uploads/profile_pics'
     ]
     for folder in folders:
         os.makedirs(folder, exist_ok=True)
@@ -116,7 +103,6 @@ def login():
         username = request.form.get('username')
         password = request.form.get('password')
         remember = request.form.get('remember')
-        
         user = User.query.filter_by(username=username).first()
         
         if user and user.check_password(password):
@@ -173,26 +159,16 @@ def register():
 @app.route('/dashboard')
 @login_required
 def dashboard():
-    assignments = Assignment.query.filter_by(course=current_user.course)\
-        .order_by(Assignment.created_at.desc()).limit(5).all()
-    resources = LibraryResource.query.filter_by(course=current_user.course)\
-        .order_by(LibraryResource.uploaded_at.desc()).limit(5).all()
+    assignments = Assignment.query.filter_by(course=current_user.course).order_by(Assignment.created_at.desc()).limit(5).all()
+    resources = LibraryResource.query.filter_by(course=current_user.course).order_by(LibraryResource.uploaded_at.desc()).limit(5).all()
     
-    # Get recent submissions for current user
-    submissions = ExamSubmission.query.filter_by(student_id=current_user.id)\
-        .order_by(ExamSubmission.submitted_at.desc()).limit(3).all()
-    
-    # Calculate progress
-    total_assignments = Assignment.query.filter_by(course=current_user.course).count()
-    completed_assignments = ExamSubmission.query.filter_by(student_id=current_user.id).count()
+    submissions = ExamSubmission.query.filter_by(student_id=current_user.id).order_by(ExamSubmission.submitted_at.desc()).limit(3).all()
     
     return render_template('dashboard.html', 
                          assignments=assignments, 
                          resources=resources,
                          submissions=submissions,
-                         user=current_user,
-                         total_assignments=total_assignments,
-                         completed_assignments=completed_assignments)
+                         user=current_user)
 
 @app.route('/upload_assignment', methods=['GET', 'POST'])
 @login_required
@@ -231,20 +207,15 @@ def upload_assignment():
         
         if file and allowed_file(file.filename):
             filename = secure_filename(f"{datetime.now().timestamp()}_{file.filename}")
-            filepath = os.path.join(app.config['UPLOAD_FOLDER'], 
-                                  Config.ASSIGNMENTS_FOLDER, 
-                                  filename)
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], Config.ASSIGNMENTS_FOLDER, filename)
             file.save(filepath)
             assignment.filename = filename
             assignment.file_type = filename.rsplit('.', 1)[1].lower()
             
-            # Parse files for questions
             if assignment.file_type == 'docx':
                 questions = parse_docx_questions(filepath)
                 if questions:
                     assignment.questions = json.dumps(questions)
-                else:
-                    flash('No questions found in DOCX file. Please format questions with Q:, A:, B:, etc.', 'warning')
             elif assignment.file_type == 'json':
                 try:
                     with open(filepath, 'r') as f:
@@ -259,15 +230,11 @@ def upload_assignment():
         flash('Assignment uploaded successfully!', 'success')
         return redirect(url_for('assignments'))
     
-    # Get recent assignments for preview
-    recent_assignments = Assignment.query.filter_by(created_by=current_user.id)\
-        .order_by(Assignment.created_at.desc()).limit(3).all()
+    recent_assignments = Assignment.query.filter_by(created_by=current_user.id).order_by(Assignment.created_at.desc()).limit(3).all()
     
-    return render_template('upload_assignment.html', 
-                         recent_assignments=recent_assignments)
+    return render_template('upload_assignment.html', recent_assignments=recent_assignments)
 
 def parse_docx_questions(filepath):
-    """Parse docx file to extract questions"""
     try:
         doc = docx.Document(filepath)
         questions = []
@@ -308,10 +275,8 @@ def parse_docx_questions(filepath):
 @app.route('/assignments')
 @login_required
 def assignments():
-    assignments_list = Assignment.query.filter_by(course=current_user.course)\
-        .order_by(Assignment.created_at.desc()).all()
+    assignments_list = Assignment.query.filter_by(course=current_user.course).order_by(Assignment.created_at.desc()).all()
     
-    # Get submissions for current user
     submissions = ExamSubmission.query.filter_by(student_id=current_user.id).all()
     submission_dict = {sub.assignment_id: sub for sub in submissions}
     
@@ -324,12 +289,10 @@ def assignments():
 def take_exam(assignment_id):
     assignment = Assignment.query.get_or_404(assignment_id)
     
-    # Check if assignment belongs to user's course
     if assignment.course != current_user.course:
         flash('This assignment is not available for your course', 'danger')
         return redirect(url_for('assignments'))
     
-    # Check if already submitted
     existing_submission = ExamSubmission.query.filter_by(
         assignment_id=assignment_id,
         student_id=current_user.id
@@ -342,7 +305,6 @@ def take_exam(assignment_id):
     if request.method == 'POST':
         answers = request.form.to_dict()
         
-        # Calculate score if questions exist
         questions = json.loads(assignment.questions) if assignment.questions else []
         score = 0
         total_points = 0
@@ -400,7 +362,6 @@ def library():
     
     resources = query.order_by(LibraryResource.uploaded_at.desc()).all()
     
-    # Get unique modules for filter
     modules = db.session.query(LibraryResource.module).distinct().filter(LibraryResource.module.isnot(None)).all()
     
     return render_template('library.html', 
@@ -429,9 +390,7 @@ def upload_resource():
         
         if allowed_file(file.filename):
             filename = secure_filename(f"{datetime.now().timestamp()}_{file.filename}")
-            filepath = os.path.join(app.config['UPLOAD_FOLDER'], 
-                                  Config.LIBRARY_FOLDER, 
-                                  filename)
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], Config.LIBRARY_FOLDER, filename)
             file.save(filepath)
             
             resource = LibraryResource(
@@ -452,9 +411,7 @@ def upload_resource():
             flash('File type not allowed', 'danger')
             return redirect(url_for('upload_resource'))
     
-    # Get recent resources for the preview section
-    recent_resources = LibraryResource.query.filter_by(uploaded_by=current_user.id)\
-        .order_by(LibraryResource.uploaded_at.desc()).limit(3).all()
+    recent_resources = LibraryResource.query.filter_by(uploaded_by=current_user.id).order_by(LibraryResource.uploaded_at.desc()).limit(3).all()
     
     return render_template('upload_resource.html', recent_resources=recent_resources)
 
@@ -463,14 +420,12 @@ def upload_resource():
 def download_file(resource_type, filename):
     if resource_type == 'assignment':
         folder = Config.ASSIGNMENTS_FOLDER
-        # Check if user has access to this assignment
         assignment = Assignment.query.filter_by(filename=filename).first()
         if assignment and assignment.course != current_user.course:
             flash('You do not have access to this file', 'danger')
             return redirect(url_for('assignments'))
     elif resource_type == 'library':
         folder = Config.LIBRARY_FOLDER
-        # Check if user has access to this resource
         resource = LibraryResource.query.filter_by(filename=filename).first()
         if resource and resource.course != current_user.course:
             flash('You do not have access to this file', 'danger')
@@ -481,12 +436,10 @@ def download_file(resource_type, filename):
     
     filepath = os.path.join(app.config['UPLOAD_FOLDER'], folder, filename)
     
-    # Check if file exists
     if not os.path.exists(filepath):
         flash('File not found', 'danger')
         return redirect(url_for('dashboard'))
     
-    # Increment view count for library resources
     if resource_type == 'library':
         resource = LibraryResource.query.filter_by(filename=filename).first()
         if resource:
@@ -507,7 +460,6 @@ def admin_dashboard():
     resources = LibraryResource.query.all()
     submissions = ExamSubmission.query.all()
     
-    # Calculate stats
     total_users = len(users)
     total_assignments = len(assignments)
     total_resources = len(resources)
@@ -531,11 +483,9 @@ def delete_user(user_id):
     
     user = User.query.get_or_404(user_id)
     
-    # Don't allow deleting yourself
     if user.id == current_user.id:
         return jsonify({'error': 'Cannot delete yourself'}), 400
     
-    # Delete user (cascading deletes will handle related records)
     db.session.delete(user)
     db.session.commit()
     
@@ -549,18 +499,14 @@ def delete_assignment(assignment_id):
     
     assignment = Assignment.query.get_or_404(assignment_id)
     
-    # Delete assignment file if exists
     if assignment.filename:
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], 
-                               Config.ASSIGNMENTS_FOLDER, 
-                               assignment.filename)
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], Config.ASSIGNMENTS_FOLDER, assignment.filename)
         if os.path.exists(filepath):
             try:
                 os.remove(filepath)
             except:
-                pass  # Ignore file deletion errors
+                pass
     
-    # Delete assignment (cascading deletes will handle submissions)
     db.session.delete(assignment)
     db.session.commit()
     
@@ -574,18 +520,14 @@ def delete_resource(resource_id):
     
     resource = LibraryResource.query.get_or_404(resource_id)
     
-    # Delete resource file if exists
     if resource.filename:
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], 
-                               Config.LIBRARY_FOLDER, 
-                               resource.filename)
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], Config.LIBRARY_FOLDER, resource.filename)
         if os.path.exists(filepath):
             try:
                 os.remove(filepath)
             except:
-                pass  # Ignore file deletion errors
+                pass
     
-    # Delete resource
     db.session.delete(resource)
     db.session.commit()
     
@@ -671,10 +613,8 @@ def add_user():
 @app.route('/profile')
 @login_required
 def profile():
-    submissions = ExamSubmission.query.filter_by(student_id=current_user.id)\
-        .order_by(ExamSubmission.submitted_at.desc()).all()
+    submissions = ExamSubmission.query.filter_by(student_id=current_user.id).order_by(ExamSubmission.submitted_at.desc()).all()
     
-    # Get assignments for reference
     assignments = {a.id: a for a in Assignment.query.filter_by(course=current_user.course).all()}
     
     return render_template('profile.html', 
@@ -695,8 +635,6 @@ def clear_cache():
     if current_user.role != 'admin':
         return jsonify({'error': 'Unauthorized'}), 403
     
-    # In a production app, you would clear actual cache here
-    # For now, we'll just return success
     return jsonify({'success': True})
 
 # CNA Course Modules
@@ -737,11 +675,9 @@ def forbidden(e):
 # Initialize database and create upload folders
 def initialize_database():
     with app.app_context():
-        # Create tables
         db.create_all()
         create_upload_folders()
         
-        # Create admin user if not exists
         if not User.query.filter_by(username='admin').first():
             admin = User(
                 username='admin',
@@ -754,7 +690,6 @@ def initialize_database():
             db.session.add(admin)
             print("Created admin user: admin / admin123")
         
-        # Create default instructor if not exists
         if not User.query.filter_by(username='instructor').first():
             instructor = User(
                 username='instructor',
@@ -766,19 +701,6 @@ def initialize_database():
             instructor.set_password('instructor123')
             db.session.add(instructor)
             print("Created instructor user: instructor / instructor123")
-        
-        # Create sample student if in development
-        if app.config.get('DEBUG') and not User.query.filter_by(username='student').first():
-            student = User(
-                username='student',
-                email='student@twinsmedcare.edu',
-                full_name='Sample Student',
-                role='student',
-                course='CNA'
-            )
-            student.set_password('student123')
-            db.session.add(student)
-            print("Created sample student: student / student123")
         
         db.session.commit()
         print("Database initialized successfully")
