@@ -1,0 +1,278 @@
+/* Custom styles for TWINS MEDCARE INSTITUTE */
+
+:root {
+    --primary-color: #0d6efd;
+    --secondary-color: #6c757d;
+    --success-color: #198754;
+    --danger-color: #dc3545;
+    --warning-color: #ffc107;
+    --info-color: #0dcaf0;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f8f9fa;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.container {
+    flex: 1;
+}
+
+/* Navbar customization */
+.navbar-brand {
+    font-weight: bold;
+    font-size: 1.5rem;
+}
+
+/* Card enhancements */
+.card {
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+    margin-bottom: 20px;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+}
+
+.card-header {
+    border-radius: 10px 10px 0 0 !important;
+    font-weight: 600;
+}
+
+/* Hero section */
+.hero-section {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 15px;
+    padding: 3rem !important;
+}
+
+/* Button styling */
+.btn {
+    border-radius: 8px;
+    padding: 0.5rem 1.5rem;
+    font-weight: 500;
+}
+
+.btn-lg {
+    padding: 0.75rem 2rem;
+}
+
+/* Form styling */
+.form-control, .form-select {
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    border: 2px solid #dee2e6;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* Badge styling */
+.badge {
+    font-weight: 500;
+    padding: 0.35em 0.65em;
+}
+
+/* List group customization */
+.list-group-item {
+    border: none;
+    border-bottom: 1px solid rgba(0,0,0,.125);
+    padding: 1rem;
+}
+
+.list-group-item:last-child {
+    border-bottom: none;
+}
+
+/* Footer styling */
+footer {
+    margin-top: auto;
+}
+
+/* Exam question styling */
+.form-check-input:checked {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+/* Animation for alerts */
+.alert {
+    animation: slideIn 0.5s ease;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateY(-20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .hero-section {
+        padding: 2rem !important;
+    }
+    
+    .display-4 {
+        font-size: 2.5rem;
+    }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--primary-color);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #0b5ed7;
+}
+
+/* Add these to your existing style.css */
+
+/* Upload progress styling */
+.progress-bar-animated {
+    animation: progress-bar-stripes 1s linear infinite;
+}
+
+@keyframes progress-bar-stripes {
+    0% { background-position: 1rem 0; }
+    100% { background-position: 0 0; }
+}
+
+/* File info styling */
+#fileInfo .alert {
+    border-left: 4px solid #0dcaf0;
+}
+
+/* Form validation */
+.is-invalid {
+    border-color: #dc3545 !important;
+}
+
+.is-valid {
+    border-color: #198754 !important;
+}
+
+/* Upload button states */
+.btn:disabled {
+    opacity: 0.65;
+}
+
+/* Chunk upload info */
+.chunk-info {
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+/* Large file warning */
+.large-file-warning {
+    border-color: #ffc107;
+    background-color: #fff3cd;
+}
+
+/* Responsive upload form */
+@media (max-width: 768px) {
+    .upload-form {
+        padding: 1rem;
+    }
+    
+    .progress {
+        height: 15px !important;
+    }
+}
+
+/* File type icons */
+.file-icon {
+    font-size: 2rem;
+    margin-right: 10px;
+}
+
+.file-icon-video {
+    color: #dc3545;
+}
+
+.file-icon-pdf {
+    color: #dc3545;
+}
+
+.file-icon-doc {
+    color: #0d6efd;
+}
+
+/* Drag and drop area */
+.drag-drop-area {
+    border: 2px dashed #dee2e6;
+    border-radius: 10px;
+    padding: 3rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.drag-drop-area:hover {
+    border-color: #0d6efd;
+    background-color: #f8f9fa;
+}
+
+.drag-drop-area.dragover {
+    border-color: #198754;
+    background-color: #d1e7dd;
+}
+
+/* Upload queue */
+.upload-queue {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.upload-queue-item {
+    padding: 10px;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.upload-queue-item:last-child {
+    border-bottom: none;
+}
+
+/* Retry button */
+.retry-btn {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+/* Success animation */
+.success-animation {
+    animation: success 1s ease;
+}
+
+@keyframes success {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
