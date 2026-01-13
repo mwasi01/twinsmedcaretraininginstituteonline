@@ -3,8 +3,7 @@ Flask-SQLAlchemy==3.0.5
 Flask-Login==0.6.2
 Flask-WTF==1.1.1
 WTForms==3.0.1
-python-docx==0.8.11  # Older version that works
+python-docx==0.8.11
 Werkzeug==2.3.7
 gunicorn==20.1.0
 psycopg2-binary==2.9.6
-# REMOVE Pillow for now - add it later if needed
