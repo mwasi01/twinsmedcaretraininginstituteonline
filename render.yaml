@@ -13,3 +13,9 @@ services:
           property: connectionString
       - key: PORT
         value: 10000
+
+databases:
+  - name: twins_medcare_db
+    plan: free
+    databaseName: twins_medcare
+    user: twins_medcare_user
