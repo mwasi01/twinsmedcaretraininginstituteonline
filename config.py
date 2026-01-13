@@ -4,11 +4,16 @@ from datetime import timedelta
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key-change-in-production'
     
-    # Use PostgreSQL in production, SQLite in development
+    # Always use DATABASE_URL from environment in production
     if os.environ.get('DATABASE_URL'):
-        SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL').replace('postgres://', 'postgresql://')
+        # Handle both postgres:// and postgresql://
+        DATABASE_URL = os.environ.get('DATABASE_URL')
+        if DATABASE_URL.startswith('postgres://'):
+            DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql://', 1)
+        SQLALCHEMY_DATABASE_URI = DATABASE_URL
     else:
-        SQLALCHEMY_DATABASE_URI = 'sqlite:///instance/database.db'
+        # For local development, use SQLite in instance folder
+        SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(os.path.abspath(os.path.dirname(__file__)), 'instance', 'database.db')
     
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
